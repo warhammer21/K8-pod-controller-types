@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-set
+  labels:
+    env: development
+spec:
+  serviceName: set-service
+  volumeClaimTemplates:
+    - metadata:
+        name: set-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
+  replicas: 3
+  selector:
+    matchLabels:
+      app: k8s-env
+      env: development
+  template:
+    metadata:
+      name: set-pod-name
+      labels:
+        app: k8s-env
+        env: development
+    spec:
+      hostname: my-pod
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: k8s-env-container
+          image: pythonincontainers/k8s-env:v1.0
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: set-volume
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          env:
+            - name: fieldPath-metadata_name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: fieldPath-metadata_namespace
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: fieldPath-metadata_uid
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: fieldPath-status_podIP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: fieldPath-status_hostIP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: fieldPath-spec_nodeName
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: fieldPath-spec_serviceAccountName
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
